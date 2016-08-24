@@ -33,10 +33,9 @@ server.route({
     method: 'GET',
     path:'/job/{parms*3}', 
     handler: function (request, reply) {
-        
         const userParts = request.params.parms.split('/');
         return sequelize.query('SELECT * FROM interests WHERE domain_source like :domain_source ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
-          { replacements: { domain_source: '%' +userParts[2] + '%', page : parseInt(userParts[0]), size: parseInt(userParts[1])}, type: sequelize.QueryTypes.SELECT }
+          { replacements: { domain_source: '%' +userParts[2] + '%', page : parseInt(userParts[0])*3, size: parseInt(userParts[1])}, type: sequelize.QueryTypes.SELECT }
         ).then(function(interests) { 
             // Construct Json
             var datas = [];
