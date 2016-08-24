@@ -8,7 +8,7 @@ var sequelize = new Sequelize(undefined, undefined, undefined, {
 // Create a server with a host and port
 const server = new Hapi.Server();
 server.connection({ 
-    host: 'https://dkvo-findly-api.herokuapp.com/', 
+    host: 'dkvo-findly-api.herokuapp.com', 
     port: process.env.PORT || 8000 
 });
 
