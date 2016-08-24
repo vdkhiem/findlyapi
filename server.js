@@ -1,4 +1,6 @@
-const Hapi = require('hapi');
+const Hapi = require('hapi'); 
+
+// Init sqlite
 var Sequelize = require('sequelize');
 var sequelize = new Sequelize(undefined, undefined, undefined, {
     'dialect':'sqlite',
@@ -8,11 +10,11 @@ var sequelize = new Sequelize(undefined, undefined, undefined, {
 // Create a server with a host and port
 const server = new Hapi.Server();
 server.connection({ 
-    host: 'dkvo-findly-api.herokuapp.com', 
-    port: process.env.PORT || 8000 
+    host: 'localhost', 
+    port: process.env.PORT || 8000  
 });
 
-// Add the route
+// Add the GET route
 server.route({
     method: 'GET',
     path:'/', 
@@ -22,16 +24,37 @@ server.route({
     }
 });
 
+// Add job Api
 server.route({
     method: 'GET',
-    path:'/job', 
+    path:'/job/{parms*3}', 
     handler: function (request, reply) {
+        
+        const userParts = request.params.parms.split('/');
+        return sequelize.query('SELECT * FROM interests WHERE domain_source like :domain_source ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
+          { replacements: { domain_source: '%' +userParts[2] + '%', page : parseInt(userParts[0]), size: parseInt(userParts[1])}, type: sequelize.QueryTypes.SELECT }
+        ).then(function(interests) { 
+            // Construct Json
+            var datas = [];
+            var result = [];
+            for (var p in interests) {
+                
+                datas.push({
+                    onetsoc_code: interests[p].onetsoc_code,
+                    domain_source: interests[p].domain_source
+                });
+            }
+            result.push({
+                data : datas,
+                page: parseInt(userParts[0]),
+                size: parseInt(userParts[1]),
+                total: datas.length
+            });
 
-        return sequelize.query('SELECT * FROM interests WHERE onetsoc_code = :onetsoc_code ',
-          { replacements: { onetsoc_code: '53-7111.00' }, type: sequelize.QueryTypes.SELECT }
-        ).then(function(interests) {
-            return reply(interests);
+            console.log('ps',JSON.stringify(result)); //comment 2
+            return reply(result);
         });
+
     }
 
 });
