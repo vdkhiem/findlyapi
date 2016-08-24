@@ -8,11 +8,15 @@ var sequelize = new Sequelize(undefined, undefined, undefined, {
 });
 
 // Create a server with a host and port
-const server = new Hapi.Server();
+//const server = new Hapi.Server();
+var server = new Hapi.Server(~~process.env.PORT || 3000, '0.0.0.0')
+
+/*
 server.connection({ 
     host: 'localhost', 
     port: process.env.PORT || 8000  
 });
+*/
 
 // Add the GET route
 server.route({
@@ -61,8 +65,8 @@ server.route({
 
 sequelize.sync().then(function(){
     console.log('Everything is synced');
-
-        // Start the server
+        
+    // Start the server
     server.start((err) => {
 
         if (err) {
