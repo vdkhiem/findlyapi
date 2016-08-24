@@ -7,6 +7,8 @@ var sequelize = new Sequelize(undefined, undefined, undefined, {
     'storage':'findly-sqlite.sqlite'
 });
 
+var Joi = require('joi');
+
 // Create a server with a host and port
 const server = new Hapi.Server();
 //const server = new Hapi.Server(+process.env.PORT || 3000, '0.0.0.0')
@@ -28,14 +30,64 @@ server.route({
     }
 });
 
-// Add job Api
+// GET job Api
 server.route({
     method: 'GET',
-    path:'/job/{parms*3}', 
+    path:'/job', 
     handler: function (request, reply) {
-        const userParts = request.params.parms.split('/');
+        var page = request.query.page;
+        var sqlitePage = (page>0)?page-1:page; //Implement efficient paging without offset
+        
+        var size = request.query.size;
+        var q = request.query.q;
+        console.log(page);console.log(size);console.log(q);
         return sequelize.query('SELECT * FROM interests WHERE domain_source like :domain_source ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
-          { replacements: { domain_source: '%' +userParts[2] + '%', page : parseInt(userParts[0])*3, size: parseInt(userParts[1])}, type: sequelize.QueryTypes.SELECT }
+          { replacements: { domain_source: '%' + q + '%', page : sqlitePage*size, size: size}, type: sequelize.QueryTypes.SELECT }
+        ).then(function(interests) { 
+            // Construct Json
+            var datas = [];
+            var result = [];
+            var total = 0.0;
+            for (var p in interests) {
+                total += interests[p].data_value;
+                datas.push({
+                    onetsoc_code: interests[p].onetsoc_code,
+                    domain_source: interests[p].domain_source
+                });
+            }
+            result.push({
+                data : datas,
+                page: page,
+                size: size,
+                total: parseFloat(total.toFixed(2))//datas.length
+            });
+
+            //console.log('ps',JSON.stringify(result)); //comment 2
+            return reply(result);
+        });
+
+    },
+    config: {
+        validate: {
+            query: {
+                page: Joi.number().default(1),
+                size: Joi.number().default(10),
+                q:Joi.string().required()
+            }
+        }
+    }
+});
+
+// GET job Api
+server.route({
+    method: 'GET',
+    path:'/job/{page}/{size}/{q}', 
+    handler: function (request, reply) {
+        var page = request.params.page;
+        var size = request.params.size;
+        var q = request.params.q
+        return sequelize.query('SELECT * FROM interests WHERE domain_source like :domain_source ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
+          { replacements: { domain_source: '%' + q + '%', page : page*size, size: size}, type: sequelize.QueryTypes.SELECT }
         ).then(function(interests) { 
             // Construct Json
             var datas = [];
@@ -49,8 +101,8 @@ server.route({
             }
             result.push({
                 data : datas,
-                page: parseInt(userParts[0]),
-                size: parseInt(userParts[1]),
+                page: page,
+                size: size,
                 total: datas.length
             });
 
@@ -58,6 +110,15 @@ server.route({
             return reply(result);
         });
 
+    },
+    config: {
+        validate: {
+            params: {
+                page: Joi.number().required().min(0),
+                size: Joi.number().min(1).max(10).required(),
+                q:Joi.string().min(1).required()
+            }
+        }
     }
 
 });
