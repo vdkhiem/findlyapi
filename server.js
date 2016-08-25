@@ -30,7 +30,7 @@ server.route({
     }
 });
 
-// GET job Api
+// GET job?page=x&size=y&q=z 
 server.route({
     method: 'GET',
     path:'/job', 
@@ -40,26 +40,27 @@ server.route({
         
         var size = request.query.size;
         var q = request.query.q;
-        console.log(page);console.log(size);console.log(q);
-        return sequelize.query('SELECT * FROM interests WHERE domain_source like :domain_source ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
-          { replacements: { domain_source: '%' + q + '%', page : sqlitePage*size, size: size}, type: sequelize.QueryTypes.SELECT }
+        return sequelize.query('SELECT onetsoc_code, title, description FROM occupation_data WHERE title like :title ORDER BY onetsoc_code LIMIT :page,:size',
+          { replacements: { title: '%' + q + '%', page : sqlitePage*size, size: size}, type: sequelize.QueryTypes.SELECT }
         ).then(function(interests) { 
             // Construct Json
             var datas = [];
             var result = [];
-            var total = 0.0;
+            //var total = 0;
             for (var p in interests) {
-                total += interests[p].data_value;
+                //total++;
+                //total += interests[p].data_value;
                 datas.push({
-                    onetsoc_code: interests[p].onetsoc_code,
-                    domain_source: interests[p].domain_source
+                    onet_soc_code: interests[p].onetsoc_code,
+                    onet_soc_title: interests[p].title,
+                    lay_title:interests[p].description
                 });
             }
             result.push({
                 data : datas,
                 page: page,
                 size: size,
-                total: parseFloat(total.toFixed(2))//datas.length
+                total: parseInt(datas.length)//total.toFixed(2)
             });
 
             //console.log('ps',JSON.stringify(result)); //comment 2
@@ -78,7 +79,8 @@ server.route({
     }
 });
 
-// GET job Api
+// Obsolete: GET job Api
+// It will be removed when
 server.route({
     method: 'GET',
     path:'/job/{page}/{size}/{q}', 
@@ -86,8 +88,8 @@ server.route({
         var page = request.params.page;
         var size = request.params.size;
         var q = request.params.q
-        return sequelize.query('SELECT * FROM interests WHERE domain_source like :domain_source ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
-          { replacements: { domain_source: '%' + q + '%', page : page*size, size: size}, type: sequelize.QueryTypes.SELECT }
+        return sequelize.query('SELECT * FROM interests WHERE title like :title ORDER BY onetsoc_code, element_id, scale_id LIMIT :page,:size',
+          { replacements: { title: '%' + q + '%', page : page*size, size: size}, type: sequelize.QueryTypes.SELECT }
         ).then(function(interests) { 
             // Construct Json
             var datas = [];
@@ -96,7 +98,7 @@ server.route({
                 
                 datas.push({
                     onetsoc_code: interests[p].onetsoc_code,
-                    domain_source: interests[p].domain_source
+                    title: interests[p].title
                 });
             }
             result.push({
@@ -105,8 +107,7 @@ server.route({
                 size: size,
                 total: datas.length
             });
-
-            console.log('ps',JSON.stringify(result)); //comment 2
+            
             return reply(result);
         });
 
@@ -124,7 +125,6 @@ server.route({
 });
 
 sequelize.sync().then(function(){
-    console.log('Everything is synced');
         
     // Start the server
     server.start((err) => {
