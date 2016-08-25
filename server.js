@@ -40,27 +40,40 @@ server.route({
         
         var size = request.query.size;
         var q = request.query.q;
+        /*
         return sequelize.query('SELECT onetsoc_code, title, description FROM occupation_data WHERE title like :title ORDER BY onetsoc_code LIMIT :page,:size',
           { replacements: { title: '%' + q + '%', page : sqlitePage*size, size: size}, type: sequelize.QueryTypes.SELECT }
         ).then(function(interests) { 
+        */
+        return sequelize.query(
+            'SELECT * ' +
+            'FROM (SELECT onetsoc_code, title, description FROM occupation_data WHERE title LIKE :title ORDER BY onetsoc_code LIMIT :page,:size) ' +
+            'UNION ' +
+            'SELECT "count" onetsoc_code, count(*) title, "Grand Count" description  FROM occupation_data where title LIKE :title',
+            { replacements: { title: '%' + q + '%', page : sqlitePage*size, size: size}, type: sequelize.QueryTypes.SELECT }
+        ).then(function(interests) {         
             // Construct Json
             var datas = [];
             var result = [];
-            //var total = 0;
+            var total = 0;
             for (var p in interests) {
                 //total++;
                 //total += interests[p].data_value;
-                datas.push({
-                    onet_soc_code: interests[p].onetsoc_code,
-                    onet_soc_title: interests[p].title,
-                    lay_title:interests[p].description
-                });
+                if (interests[p].onetsoc_code == 'count'){
+                    total = parseInt(interests[p].title);
+                } else {
+                    datas.push({
+                        onet_soc_code: interests[p].onetsoc_code,
+                        onet_soc_title: interests[p].title,
+                        lay_title:interests[p].description
+                    });
+                }
             }
             result.push({
                 data : datas,
                 page: page,
                 size: size,
-                total: parseInt(datas.length)//total.toFixed(2)
+                total: total//total.toFixed(2)
             });
 
             //console.log('ps',JSON.stringify(result)); //comment 2
