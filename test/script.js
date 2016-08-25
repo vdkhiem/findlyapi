@@ -21,7 +21,7 @@ lab.test("PositiveTesting", function(done) {
 });
 
 // Set param page = 0
-lab.test("PositiveNegative1", function(done) {
+lab.test("NegativeTesting1", function(done) {
     var options = {
         method: "GET",
         url: "/job?page=0&size=3&q=chief"
@@ -38,7 +38,7 @@ lab.test("PositiveNegative1", function(done) {
 });
 
 // Omit page param
-lab.test("PositiveNegative2", function(done) {
+lab.test("NegativeTesting2", function(done) {
     var options = {
         method: "GET",
         url: "/job?size=3&q=chief"
@@ -55,7 +55,7 @@ lab.test("PositiveNegative2", function(done) {
 });
 
 // Omit size param
-lab.test("PositiveNegative3", function(done) {
+lab.test("NegativeTesting3", function(done) {
     var options = {
         method: "GET",
         url: "/job?q=chief"
@@ -72,7 +72,7 @@ lab.test("PositiveNegative3", function(done) {
 });
 
 // No param
-lab.test("PositiveDestructive", function(done) {
+lab.test("DestructiveTesting", function(done) {
     var options = {
         method: "GET",
         url: "/job"
